@@ -5,8 +5,8 @@
 [![Go](https://img.shields.io/badge/go-1.25+-00ADD8.svg)](https://go.dev/)
 [![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey.svg)](https://github.com/MichalAFerber/tomatick2)
 
-A **menu bar / system tray** timer, stopwatch, alarm and pomodoro — all in one
-icon, with a timestamped history of everything you run.
+Class A (OSS/MIT). A **menu bar / system tray** timer, stopwatch, alarm and
+pomodoro — all in one icon, with a timestamped history of everything you run.
 
 This is a Go rewrite of the original [macOS-only Python
 Tomatick](https://github.com/MichalAFerber/tomatick), built so a single codebase
