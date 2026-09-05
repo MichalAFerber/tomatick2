@@ -1,0 +1,20 @@
+# Build output
+/tomatick
+/tomatick.exe
+/Tomatick.app
+/Tomatick.exe
+/Tomatick.tar.xz
+dist/
+fyne-cross/
+
+# Go
+vendor/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp

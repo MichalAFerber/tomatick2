@@ -1,0 +1,11 @@
+[Details]
+Name = "Tomatick"
+ID = "us.tomatick"
+Version = "0.5.0"
+Build = 1
+Icon = "Icon.png"
+
+[LinuxAndBSD]
+GenericName = "Timer"
+Categories = ["Utility"]
+Comment = "Menu bar timer, stopwatch, alarm and pomodoro"
