@@ -8,8 +8,12 @@ PKG := ./cmd/tomatick
 # stops the constant, FyneApp.toml and the git tag from drifting apart.
 #
 # Lazy `=`, not `:=`, on purpose: an override (`make VERSION=2.0.0 package-windows`)
-# then skips the shell call entirely, which is what lets the Windows runner --
-# where make's default shell is cmd.exe, not sh -- use these same targets.
+# then skips the shell call entirely. The release workflow resolves the version ONCE
+# and passes it to all three platform jobs, so every artifact in a release is stamped
+# from a single read rather than three independent ones.
+# (GNU Make on the windows-latest runner does use sh, not cmd.exe -- measured: the
+# `mv` in package-windows below ran fine in run 33951868989. The override is belt,
+# not braces.)
 VERSION = $(shell sed -n 's/^const Version = "\(.*\)"$$/\1/p' internal/version/version.go)
 
 .PHONY: test build run tidy version-check package-mac package-linux package-windows

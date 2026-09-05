@@ -63,6 +63,10 @@ jobs:
         if: runner.os == 'Windows'
         run: choco install mingw -y
 
+      - name: TEMP negative control - fail ubuntu only
+        if: runner.os == 'Linux'
+        run: exit 1
+
       - name: Logic tests
         run: go test ./internal/sessions ./internal/alarms ./internal/history ./internal/settings ./internal/core
 
@@ -70,3 +74,29 @@ jobs:
         run: go build -o tomatick ./cmd/tomatick
         env:
           CGO_ENABLED: "1"
+
+  # templates/ruleset-main.json requires the status-check context "ci", and every
+  # other repo in the estate reports one. A matrix cannot produce it -- it produces
+  # one context per entry, e.g. "Test (ubuntu-latest)" -- so without this job the
+  # standard ruleset blocks every merge forever on a check that can never report.
+  # apply-rulesets.sh says so in its own header: stage 2 "MUST NOT be applied to a
+  # repo with no `ci` workflow ... bypass_actors is empty by design so there is no
+  # way to merge the fix."
+  #
+  # This is a real gate, not a rubber stamp: `needs.test.result` is the AGGREGATE
+  # over every matrix entry, so it is `success` only when all three platforms pass.
+  # `if: always()` is what makes it fire at all when one fails -- without it this
+  # job is SKIPPED, and a skipped required check does not block a merge.
+  ci:
+    needs: test
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Gate on the build matrix
+        env:
+          RESULT: ${{ needs.test.result }}
+        run: |
+          echo "aggregate result of the 3-platform matrix: $RESULT"
+          test "$RESULT" = "success"
