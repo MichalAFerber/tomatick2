@@ -63,10 +63,6 @@ jobs:
         if: runner.os == 'Windows'
         run: choco install mingw -y
 
-      - name: TEMP negative control - fail ubuntu only
-        if: runner.os == 'Linux'
-        run: exit 1
-
       - name: Logic tests
         run: go test ./internal/sessions ./internal/alarms ./internal/history ./internal/settings ./internal/core
 
@@ -75,13 +71,21 @@ jobs:
         env:
           CGO_ENABLED: "1"
 
-  # templates/ruleset-main.json requires the status-check context "ci", and every
-  # other repo in the estate reports one. A matrix cannot produce it -- it produces
-  # one context per entry, e.g. "Test (ubuntu-latest)" -- so without this job the
-  # standard ruleset blocks every merge forever on a check that can never report.
-  # apply-rulesets.sh says so in its own header: stage 2 "MUST NOT be applied to a
-  # repo with no `ci` workflow ... bypass_actors is empty by design so there is no
-  # way to merge the fix."
+  # NOT required by this repo's ruleset today, and nothing here is deadlocked:
+  # ruleset 22323548 ("main: PR-only (bootstrap)") requires the three matrix
+  # contexts -- Test (ubuntu-latest), Test (macos-latest), Test (windows-latest)
+  # -- read back from the API on 2026-09-05.
+  #
+  # This job exists so the ESTATE-STANDARD ruleset can be applied here later
+  # without bricking the repo. templates/ruleset-main.json requires the context
+  # "ci", and templates/ci.yml names its job `ci` for exactly that reason ("job
+  # name == the required status-check context"). A matrix cannot produce that
+  # context -- it emits one per entry -- so applying stage 2 to a repo with no
+  # `ci` job leaves a required check that can never report. apply-rulesets.sh
+  # says so in its own header: stage 2 "MUST NOT be applied to a repo with no
+  # `ci` workflow ... `bypass_actors` is empty by design so there is no way to
+  # merge the fix." Ten lines now, or a repo that has to have its ruleset
+  # disabled to accept the fix later.
   #
   # This is a real gate, not a rubber stamp: `needs.test.result` is the AGGREGATE
   # over every matrix entry, so it is `success` only when all three platforms pass.

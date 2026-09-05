@@ -23,11 +23,6 @@ name: Release
 on:
   push:
     tags: ["v*"]
-    # TEMPORARY - removed before review. workflow_dispatch is unavailable until
-    # this file is on the default branch (measured: HTTP 404 "workflow release.yml
-    # not found on the default branch"), so this is the only way to exercise the
-    # workflow before it merges.
-    branches: ["shawn/release-2.0.0"]
   workflow_dispatch:
 
 permissions: {}
@@ -255,6 +250,7 @@ jobs:
           **Linux (x86_64)** — \`Tomatick-${VERSION}-linux-amd64.tar.xz\`
           \`\`\`sh
           tar -xJf Tomatick-${VERSION}-linux-amd64.tar.xz
+          cd tomatick
           sudo make install     # or: make user-install   (installs under ~/.local)
           \`\`\`
           Installs the binary, a .desktop entry, and the icon.
