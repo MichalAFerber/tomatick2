@@ -174,6 +174,11 @@ jobs:
               OUT="${BASE}.tar.xz"
               echo "--- tarball contents ---"
               tar -tJf "$OUT"
+              # The .desktop entry is the one artifact whose quality depends on
+              # FyneApp.toml being found. Print it: GenericName/Categories/Comment
+              # appear only if fyne loaded the metadata from <srcDir>.
+              echo "--- generated .desktop ---"
+              tar -xJf "$OUT" -O tomatick/usr/local/share/applications/Tomatick.desktop
               ;;
             windows)
               test -f Tomatick.exe

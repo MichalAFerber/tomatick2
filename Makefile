@@ -58,5 +58,11 @@ package-mac: build
 package-linux:
 	fyne package -os linux -src cmd/tomatick --name Tomatick --appID us.tomatick --appVersion $(VERSION) --icon Icon.png
 
+# fyne is inconsistent about where it writes: darwin and linux honour the output
+# dir (the repo root), but the windows path ends in `os.Rename(filepath.Base(p.exe),
+# appName)`, which is relative to the cwd fyne has already chdir'd to -- so the exe
+# lands in cmd/tomatick, not here. Normalise it so all three targets leave their
+# artifact at the repo root, which is what the README and .gitignore both assume.
 package-windows:
 	fyne package -os windows -src cmd/tomatick --name Tomatick --appID us.tomatick --appVersion $(VERSION) --icon Icon.png
+	mv cmd/tomatick/Tomatick.exe Tomatick.exe

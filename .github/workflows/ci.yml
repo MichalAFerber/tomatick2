@@ -70,23 +70,3 @@ jobs:
         run: go build -o tomatick ./cmd/tomatick
         env:
           CGO_ENABLED: "1"
-
-  # templates/ruleset-main.json requires the status-check context "ci" (§4). A
-  # matrix job cannot produce that context — it produces one per entry, e.g.
-  # "Test (ubuntu-latest)" — so applying the standard ruleset to this repo without
-  # this job would block every merge forever on a check that can never report.
-  # `if: always()` matters: without it a failed matrix leaves this SKIPPED, and a
-  # skipped required check does not block.
-  ci:
-    needs: test
-    if: always()
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions: {}
-    steps:
-      - name: Gate on the build matrix
-        env:
-          RESULT: ${{ needs.test.result }}
-        run: |
-          echo "matrix result: $RESULT"
-          test "$RESULT" = "success"
