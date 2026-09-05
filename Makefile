@@ -32,7 +32,7 @@ tidy:
 # run on Linux rather than a prerequisite of the package-* targets.
 version-check:
 	@v='$(VERSION)'; \
-	 t=$$(sed -n 's/^Version = "\(.*\)"$$/\1/p' FyneApp.toml); \
+	 t=$$(sed -n 's/^Version = "\(.*\)"$$/\1/p' cmd/tomatick/FyneApp.toml); \
 	 test -n "$$v" || { echo "version-check: no Version const in internal/version/version.go"; exit 1; }; \
 	 test "$$v" = "$$t" || { echo "version-check: FyneApp.toml has '$$t', version.go has '$$v'"; exit 1; }; \
 	 if [ -n "$(EXPECT_VERSION)" ] && [ "$(EXPECT_VERSION)" != "$$v" ]; then \
@@ -43,12 +43,20 @@ version-check:
 # fyne package produces a platform-native bundle. Run on the target OS: every GUI
 # dependency here is cgo, so there is no cross-compilation. After packaging on
 # macOS, LSUIElement is patched so the app lives in the menu bar without a Dock icon.
+#
+# FyneApp.toml and Icon.png live beside the main package, not at the repo root,
+# because fyne resolves BOTH relative to -src: it loads <srcDir>/FyneApp.toml, and
+# it rewrites a literal `--icon Icon.png` to <srcDir>/Icon.png. With them at the
+# root the metadata was silently ignored and the icon lookup failed outright.
+#
+# The flags are --appID and --appVersion, NOT --app-id/--app-version: the fyne CLI
+# rejects the hyphenated forms with `flag provided but not defined` (run 33951169730).
 package-mac: build
-	fyne package -os darwin -src cmd/tomatick --name Tomatick --app-id us.tomatick --app-version $(VERSION) --icon Icon.png
+	fyne package -os darwin -src cmd/tomatick --name Tomatick --appID us.tomatick --appVersion $(VERSION) --icon Icon.png
 	plutil -replace LSUIElement -bool true Tomatick.app/Contents/Info.plist
 
 package-linux:
-	fyne package -os linux -src cmd/tomatick --name Tomatick --app-id us.tomatick --app-version $(VERSION) --icon Icon.png
+	fyne package -os linux -src cmd/tomatick --name Tomatick --appID us.tomatick --appVersion $(VERSION) --icon Icon.png
 
 package-windows:
-	fyne package -os windows -src cmd/tomatick --name Tomatick --app-id us.tomatick --app-version $(VERSION) --icon Icon.png
+	fyne package -os windows -src cmd/tomatick --name Tomatick --appID us.tomatick --appVersion $(VERSION) --icon Icon.png
