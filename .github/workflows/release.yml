@@ -23,6 +23,11 @@ name: Release
 on:
   push:
     tags: ["v*"]
+    # TEMPORARY - removed before review. workflow_dispatch is unavailable until
+    # this file is on the default branch (measured: HTTP 404 "workflow release.yml
+    # not found on the default branch"), so this is the only way to exercise the
+    # workflow before it merges.
+    branches: ["shawn/release-2.0.0"]
   workflow_dispatch:
 
 permissions: {}
