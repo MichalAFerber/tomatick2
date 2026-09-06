@@ -1,0 +1,281 @@
+# Tomatick release — DEV-STANDARDS §15.
+#
+# Builds and packages on a NATIVE runner per OS. There is no cross-compilation
+# option here: fyne.io/fyne/v2, fyne.io/systray and golang.design/x/hotkey are all
+# cgo bindings over native GUI toolkits, so the Windows binary cannot be produced
+# on Linux.
+#
+# Packaging is NOT reimplemented in YAML — each job calls the repo's own
+# `make package-*` target, so there is one copy of the packaging logic and the
+# thing CI runs is the thing a developer runs locally.
+#
+# The version is a `const` in internal/version/version.go. `-ldflags -X` CANNOT
+# set it: the linker accepts the flag against a const, silently does nothing, and
+# the binary reports the old number. So the constant is the artifact's version,
+# and `make version-check` refuses to build when the tag disagrees with it.
+#
+# workflow_dispatch is deliberate and permanent: a release workflow that has only
+# ever been reasoned about is not a release workflow. It exercises build and
+# packaging on all three runners without cutting a tag, and publishes nothing.
+
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  version:
+    name: Resolve and check version
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # On a tag build the tag is authoritative and MUST equal the constant; a
+      # release tagged v2.0.0 whose binary reports 0.5.0 is worse than no version
+      # string at all. On a dispatch there is no tag, so the constant stands alone.
+      - name: Resolve version and check agreement
+        id: v
+        env:
+          REF_NAME: ${{ github.ref_name }}
+          IS_TAG: ${{ startsWith(github.ref, 'refs/tags/v') }}
+        run: |
+          set -euo pipefail
+          VERSION=$(sed -n 's/^const Version = "\(.*\)"$/\1/p' internal/version/version.go)
+          if [ "$IS_TAG" = "true" ]; then
+            make version-check EXPECT_VERSION="${REF_NAME#v}"
+          else
+            make version-check
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "resolved version: $VERSION (tag build: $IS_TAG)"
+
+  package:
+    name: Package (${{ matrix.os }})
+    needs: version
+    runs-on: ${{ matrix.os }}
+    # MEASURED against CI run 33950120958 (windows 8m28s worst) plus the fyne CLI
+    # install and the packaging build this workflow adds on top of it.
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: package-linux
+            platform: linux
+          - os: macos-latest
+            target: package-mac
+            platform: macos
+          - os: windows-latest
+            target: package-windows
+            platform: windows
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: "1.25.x"
+
+      # Same dependency set as ci.yml, including libwayland-dev — see the comment
+      # there for why the Wayland headers are not optional.
+      - name: Linux GUI build deps
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc libgl1-mesa-dev xorg-dev libxkbcommon-dev libwayland-dev
+
+      - name: Windows gcc
+        if: runner.os == 'Windows'
+        run: choco install mingw -y
+
+      # Pinned to the fyne version in go.mod. A floating @latest packager would
+      # change the bundle layout under us between releases.
+      - name: Install fyne CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          go install fyne.io/fyne/v2/cmd/fyne@v2.8.1
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      - name: Record the build environment
+        shell: bash
+        run: |
+          echo "runner.os=${{ runner.os }} runner.arch=${{ runner.arch }}"
+          uname -a || true
+          go version
+          fyne version || true
+          make --version | head -1
+
+      # VERSION is passed explicitly so the Makefile never has to shell out to
+      # sed — which matters on Windows, where make's default shell is cmd.exe.
+      - name: Package
+        shell: bash
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+          TARGET: ${{ matrix.target }}
+        run: |
+          set -euo pipefail
+          make "$TARGET" VERSION="$VERSION"
+
+      - name: Name the artifact
+        id: art
+        shell: bash
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+          PLATFORM: ${{ matrix.platform }}
+          RUNNER_ARCH_RAW: ${{ runner.arch }}
+        run: |
+          set -euo pipefail
+          case "$RUNNER_ARCH_RAW" in
+            X64) ARCH=amd64 ;;
+            ARM64) ARCH=arm64 ;;
+            *) ARCH=$(echo "$RUNNER_ARCH_RAW" | tr '[:upper:]' '[:lower:]') ;;
+          esac
+          BASE="Tomatick-${VERSION}-${PLATFORM}-${ARCH}"
+          echo "--- what fyne package produced ---"
+          ls -la
+          case "$PLATFORM" in
+            macos)
+              # ditto, not zip: it preserves the symlinks and extended attributes
+              # inside a .app bundle that a plain zip flattens.
+              test -d Tomatick.app
+              /usr/bin/ditto -c -k --keepParent Tomatick.app "${BASE}.zip"
+              OUT="${BASE}.zip"
+              echo "--- bundle version actually written into Info.plist ---"
+              /usr/bin/plutil -p Tomatick.app/Contents/Info.plist | grep -iE 'CFBundleShortVersionString|CFBundleVersion|LSUIElement'
+              ;;
+            linux)
+              test -f Tomatick.tar.xz
+              mv Tomatick.tar.xz "${BASE}.tar.xz"
+              OUT="${BASE}.tar.xz"
+              echo "--- tarball contents ---"
+              tar -tJf "$OUT"
+              # The .desktop entry is the one artifact whose quality depends on
+              # FyneApp.toml being found. Print it: GenericName/Categories/Comment
+              # appear only if fyne loaded the metadata from <srcDir>.
+              echo "--- generated .desktop ---"
+              tar -xJf "$OUT" -O tomatick/usr/local/share/applications/Tomatick.desktop
+              ;;
+            windows)
+              test -f Tomatick.exe
+              mv Tomatick.exe "${BASE}.exe"
+              OUT="${BASE}.exe"
+              ;;
+          esac
+          echo "artifact: $OUT ($(du -h "$OUT" | cut -f1))"
+          echo "out=$OUT" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: tomatick-${{ matrix.platform }}
+          path: ${{ steps.art.outputs.out }}
+          if-no-files-found: error
+          retention-days: 7
+
+  # Only a tag push publishes. A workflow_dispatch run stops after `package`,
+  # having proved the three builds still work.
+  release:
+    name: Draft GitHub release
+    needs: [version, package]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: tomatick-*
+          merge-multiple: true
+          path: dist
+
+      - name: Write release notes
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          ls -la dist
+          # The notes below name exact filenames. If the runner arch ever changes
+          # under us (macos-latest is Apple silicon today), the instructions would
+          # point at a file nobody can download. Fail here instead of shipping that.
+          for f in "Tomatick-${VERSION}-macos-arm64.zip" \
+                   "Tomatick-${VERSION}-windows-amd64.exe" \
+                   "Tomatick-${VERSION}-linux-amd64.tar.xz"; do
+            test -f "dist/$f" || {
+              echo "release notes name '$f', but packaging did not produce it:"
+              ls -la dist
+              exit 1
+            }
+          done
+          cat > notes.md <<NOTES
+          ## Install
+
+          **macOS** — \`Tomatick-${VERSION}-macos-arm64.zip\`
+          Unzip and drag \`Tomatick.app\` to /Applications. Tomatick lives in the menu
+          bar and has no Dock icon.
+
+          > **This build is not signed or notarized.** macOS Gatekeeper will refuse the
+          > first launch with "Tomatick cannot be opened because the developer cannot be
+          > verified." To open it anyway: right-click \`Tomatick.app\` → **Open** →
+          > **Open**, or go to System Settings → Privacy & Security and click **Open
+          > Anyway**. You only need to do this once.
+
+          > This artifact is **Apple silicon (arm64) only**. Intel Macs are not covered
+          > by this release.
+
+          **Windows** — \`Tomatick-${VERSION}-windows-amd64.exe\`
+          Run it directly; there is no installer. SmartScreen may warn that the
+          publisher is unknown, because this build is not code-signed: choose
+          **More info** → **Run anyway**.
+
+          **Linux (x86_64)** — \`Tomatick-${VERSION}-linux-amd64.tar.xz\`
+          \`\`\`sh
+          tar -xJf Tomatick-${VERSION}-linux-amd64.tar.xz
+          cd tomatick
+          sudo make install     # or: make user-install   (installs under ~/.local)
+          \`\`\`
+          Installs the binary, a .desktop entry, and the icon.
+
+          ## Notes
+
+          - Every artifact is built on its own native runner. The GUI stack is cgo over
+            a native toolkit, so cross-compilation is not possible.
+          - The version is compiled in from \`internal/version/version.go\`; the release
+            workflow refuses to build if the tag and that constant disagree.
+          NOTES
+          cat notes.md
+
+      # Created as a DRAFT: the tag is the trigger, a human is still the publisher.
+      # Drop --draft to publish straight from the tag.
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          gh release create "$TAG" dist/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Tomatick $VERSION" \
+            --notes-file notes.md \
+            --draft
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json isDraft,assets

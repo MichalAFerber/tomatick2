@@ -77,7 +77,14 @@ make package-windows  # Tomatick.exe
 make package-linux    # Tomatick.tar.xz
 ```
 
-`fyne package` must be installed (`go install fyne.io/fyne/v2/cmd/fyne@latest`).
+`fyne package` must be installed. Pin it to the `fyne.io/fyne/v2` version in
+`go.mod` — the packager decides the bundle layout, so a floating `@latest`
+changes it under you between releases. The release workflow pins the same
+version:
+
+```bash
+go install fyne.io/fyne/v2/cmd/fyne@v2.8.1
+```
 
 On macOS the bundle is unsigned; on first launch right-click → Open to get past
 Gatekeeper, or:
