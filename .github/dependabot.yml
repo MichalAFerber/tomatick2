@@ -1,0 +1,60 @@
+# Tomatick dependency updates—DEV-STANDARDS §15.
+#
+# Adapted from tgwab-standards templates/dependabot.yml. The template's `npm`
+# entry is dropped: this repo has no package.json (`git ls-files '*package*.json'`
+# is empty). The `registries:` block for @tgwab/* is dropped for the same reason—
+# nothing here consumes GitHub Packages.
+#
+# The github-actions entry is not optional. Every `uses:` in ci.yml and
+# release.yml is pinned to a 40-char SHA per §15, and a pinned SHA is only safe
+# while something keeps it current; without this file the pins silently rot into
+# permanently-old actions. This is the automation that premise assumes.
+#
+# Grouping caps a normal week at ~2 PRs instead of one per package—ungrouped
+# Dependabot is how automated updates get muted and then ignored.
+
+version: 2
+
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: America/New_York
+    open-pull-requests-limit: 2
+    labels: [dependencies]
+    commit-message:
+      prefix: "chore(actions)"
+    groups:
+      actions:
+        patterns: ["*"]
+
+  # Go modules are the real dependency surface here: the GUI stack (fyne, systray,
+  # hotkey) is cgo over native toolkits, so a bump can break the build on one OS
+  # and not the others. Majors are split from minor/patch so a breaking fyne
+  # release arrives as its own PR rather than buried in a batch.
+  #
+  # No `cooldown:` here on purpose—it is set on the template's npm entry, and
+  # gomod support for it is not something this repo has verified. An unsupported
+  # key is the failure mode §15 warns about: the config looks right and the
+  # ecosystem quietly proposes nothing.
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: America/New_York
+    open-pull-requests-limit: 3
+    labels: [dependencies]
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      gomod-non-major:
+        patterns: ["*"]
+        update-types: [minor, patch]
+      gomod-major:
+        patterns: ["*"]
+        update-types: [major]

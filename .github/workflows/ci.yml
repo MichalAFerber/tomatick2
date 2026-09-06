@@ -1,3 +1,12 @@
+# Tomatick CI — DEV-STANDARDS §15.
+#
+# Every GUI dependency in go.mod (fyne.io/fyne/v2, fyne.io/systray,
+# golang.design/x/hotkey) binds a native toolkit through cgo, so there is no
+# cross-compilation: each OS is built on its own runner.
+#
+# Action SHAs are pinned per §15 — a tag is mutable, a SHA is not. Re-resolve with:
+#   gh api repos/actions/checkout/git/refs/tags/v7.0.1 --jq .object.sha
+
 name: CI
 
 on:
@@ -5,33 +14,50 @@ on:
     branches: [main]
   pull_request:
 
-permissions:
-  contents: read
+permissions: {}
 
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   test:
     name: Test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    # MEASURED: run 33950120958 — windows-latest 8m28s (choco mingw + a cold cgo
+    # build), ubuntu 3m21s, macos 1m23s. 25 is ~3x the worst observed; past it a
+    # job is wedged rather than slow.
+    timeout-minutes: 25
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: "1.25.x"
 
+      # xorg-dev covers the X11 backend; libwayland-dev covers the Wayland one.
+      # BOTH are required: go-gl/glfw's build tags are
+      # `(linux && !x11 && !wayland) || (linux && wayland)` on c_glfw_lin_wayland.go,
+      # so with no tags set the Wayland backend compiles too and wl_platform.h
+      # needs <wayland-client-core.h>. Without libwayland-dev this step "succeeds"
+      # and the BUILD fails — run 33950120958, ubuntu-latest:
+      #   wl_platform.h:27:10: fatal error: wayland-client-core.h: No such file
+      # The vendored glfw ships pre-generated *-client-protocol.h, so
+      # wayland-protocols/wayland-scanner are NOT needed, and libdecor is
+      # dlopen'd at runtime rather than included, so libdecor-0-dev is not either.
       - name: Linux GUI build deps
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc libgl1-mesa-dev xorg-dev libxkbcommon-dev
+          sudo apt-get install -y gcc libgl1-mesa-dev xorg-dev libxkbcommon-dev libwayland-dev
 
       - name: Windows gcc
         if: runner.os == 'Windows'
@@ -44,3 +70,37 @@ jobs:
         run: go build -o tomatick ./cmd/tomatick
         env:
           CGO_ENABLED: "1"
+
+  # NOT required by this repo's ruleset today, and nothing here is deadlocked:
+  # ruleset 22323548 ("main: PR-only (bootstrap)") requires the three matrix
+  # contexts -- Test (ubuntu-latest), Test (macos-latest), Test (windows-latest)
+  # -- read back from the API on 2026-09-05.
+  #
+  # This job exists so the ESTATE-STANDARD ruleset can be applied here later
+  # without bricking the repo. templates/ruleset-main.json requires the context
+  # "ci", and templates/ci.yml names its job `ci` for exactly that reason ("job
+  # name == the required status-check context"). A matrix cannot produce that
+  # context -- it emits one per entry -- so applying stage 2 to a repo with no
+  # `ci` job leaves a required check that can never report. apply-rulesets.sh
+  # says so in its own header: stage 2 "MUST NOT be applied to a repo with no
+  # `ci` workflow ... `bypass_actors` is empty by design so there is no way to
+  # merge the fix." Ten lines now, or a repo that has to have its ruleset
+  # disabled to accept the fix later.
+  #
+  # This is a real gate, not a rubber stamp: `needs.test.result` is the AGGREGATE
+  # over every matrix entry, so it is `success` only when all three platforms pass.
+  # `if: always()` is what makes it fire at all when one fails -- without it this
+  # job is SKIPPED, and a skipped required check does not block a merge.
+  ci:
+    needs: test
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Gate on the build matrix
+        env:
+          RESULT: ${{ needs.test.result }}
+        run: |
+          echo "aggregate result of the 3-platform matrix: $RESULT"
+          test "$RESULT" = "success"
