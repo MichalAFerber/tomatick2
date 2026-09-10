@@ -1,9 +1,12 @@
 # Tomatick dependency updates—DEV-STANDARDS §15.
 #
-# Adapted from tgwab-standards templates/dependabot.yml. The template's `npm`
-# entry is dropped: this repo has no package.json (`git ls-files '*package*.json'`
-# is empty). The `registries:` block for @tgwab/* is dropped for the same reason—
-# nothing here consumes GitHub Packages.
+# Adapted from tgwab-standards templates/dependabot.yml. The `registries:` block
+# for @tgwab/* is dropped: nothing here consumes GitHub Packages.
+#
+# The npm entry (site/) came across verbatim from MichalAFerber/tomatick when
+# the marketing site moved here — tailwindcss ignore and comment included. Do
+# not regenerate this block from the template; the ignore is load-bearing (see
+# the entry below) and the template does not know about it.
 #
 # The github-actions entry is not optional. Every `uses:` in ci.yml and
 # release.yml is pinned to a 40-char SHA per §15, and a pinned SHA is only safe
@@ -56,5 +59,35 @@ updates:
         patterns: ["*"]
         update-types: [minor, patch]
       gomod-major:
+        patterns: ["*"]
+        update-types: [major]
+
+  - package-ecosystem: npm
+    directory: /site
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: America/New_York
+    open-pull-requests-limit: 3
+    labels: [dependencies]
+    commit-message:
+      prefix: "chore(deps)"
+    # Supply-chain filter: malicious versions are typically yanked within hours.
+    cooldown:
+      default-days: 7
+      semver-major-days: 14
+    # Tailwind 3 -> 4 is a breaking rewrite (new engine, CSS-first config).
+    # Treat it as scheduled work, not a Dependabot merge. Security updates for
+    # tailwindcss are UNAFFECTED by this ignore and will still open a PR.
+    ignore:
+      - dependency-name: "tailwindcss"
+        update-types: ["version-update:semver-major"]
+
+    groups:
+      npm-non-major:
+        patterns: ["*"]
+        update-types: [minor, patch]
+      npm-major:
         patterns: ["*"]
         update-types: [major]

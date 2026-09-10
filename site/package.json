@@ -1,0 +1,23 @@
+{
+  "name": "tomatick-site",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "description": "tomatick.us \u2014 Astro + Tailwind marketing/docs site for Tomatick",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "serve:csp": "node tests/serve-with-headers.mjs",
+    "test:harness": "playwright test",
+    "gen:assets": "node scripts/gen-assets.mjs"
+  },
+  "dependencies": {
+    "astro": "^7.2.10",
+    "autoprefixer": "^10.4.24",
+    "tailwindcss": "^3.4.17"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1"
+  }
+}
