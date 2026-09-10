@@ -86,6 +86,13 @@ version:
 go install fyne.io/fyne/v2/cmd/fyne@v2.8.1
 ```
 
+`fyne.io/fyne/v2/cmd/fyne` is deprecated upstream in favor of
+`fyne.io/tools/cmd/fyne` (the old binary still works and prints a migration
+notice on every run). Stay on the path above for now: `fyne.io/tools` is a
+separate module with its own version numbers, not locked to `fyne.io/fyne/v2`,
+so swapping it in here — and in `.github/workflows/release.yml` — needs its
+own verification that packaging output doesn't change, not a drive-by edit.
+
 On macOS the bundle is unsigned; on first launch right-click → Open to get past
 Gatekeeper, or:
 
