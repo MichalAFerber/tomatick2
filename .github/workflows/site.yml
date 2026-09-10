@@ -1,0 +1,50 @@
+name: Site CI
+
+on:
+  push:
+    branches: [main]
+    paths: ['site/**', '.github/workflows/site.yml']
+  # Deliberately NOT paths-filtered, unlike push. "Build + headless CSP harness"
+  # is a required status check on main, and a required check that does not run is
+  # not a skipped check — it is a permanently blocked pull request, because the
+  # context the ruleset waits for never reports at all. With the filter here, any
+  # PR touching only the Python app could never merge. The filter belongs on push,
+  # where it decides whether the work is worth doing; the gate has to run every
+  # time. There is no deploy job here, so running it costs a build and a harness.
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: site-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: site
+
+jobs:
+  build-and-harness:
+    name: Build + headless CSP harness
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: site/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Build
+        run: npm run build
+
+      - name: Headless harness under production CSP
+        run: npm run test:harness
