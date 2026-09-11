@@ -4,7 +4,7 @@ import { SITE } from '../consts';
 ---
 <Base
   title="Quick Start"
-  description="How to install and use Tomatick — the macOS menu bar timer, stopwatch, alarm and pomodoro."
+  description="How to install and use Tomatick — the menu bar timer, stopwatch, alarm and pomodoro for macOS, Windows, and Linux."
   path="/docs/"
   schema="WebApplication"
 >
@@ -13,16 +13,19 @@ import { SITE } from '../consts';
       <h1>Quick Start</h1>
       <p>
         A <strong>menu bar</strong> timer, stopwatch, alarm and pomodoro — all in one
-        icon, with a timestamped history of everything you run. Rewritten from the
+        icon, with a timestamped history of everything you run. Runs on
+        <strong>macOS, Windows, and Linux</strong>. Rewritten from the
         original <a href={SITE.legacyRepo} target="_blank" rel="noopener">Python app</a>
-        as a single Go binary.
+        (macOS-only) as a single Go binary.
       </p>
       <blockquote>
-        <strong>Requirements:</strong> Apple Silicon Mac (M1/M2/M3/M4), a recent macOS. The
-        build is unsigned (no Apple Developer Program needed).
+        All three builds are <strong>unsigned</strong> — no Apple Developer Program, no code-signing
+        certificate. Each OS has its own one-time first-launch step; see below.
       </blockquote>
 
       <h2>1. Install</h2>
+
+      <h3>macOS (Apple Silicon, M1–M4)</h3>
       <ol>
         <li>Download the latest <code>Tomatick-x.y.z-macos-arm64.zip</code> from the <a href={SITE.releases} target="_blank" rel="noopener">Releases</a> page.</li>
         <li>Unzip it and drag <strong>Tomatick.app</strong> onto the <strong>Applications</strong> folder.</li>
@@ -33,9 +36,33 @@ import { SITE } from '../consts';
           <pre><code>xattr -dr com.apple.quarantine /Applications/Tomatick.app</code></pre>
         </li>
       </ol>
+
+      <h3>Windows (x86_64)</h3>
+      <ol>
+        <li>Download the latest <code>Tomatick-x.y.z-windows-amd64.exe</code> from the <a href={SITE.releases} target="_blank" rel="noopener">Releases</a> page. There is no installer — run the <code>.exe</code> directly, from wherever you saved it.</li>
+        <li>
+          <strong>First launch only:</strong> SmartScreen will warn that the publisher is unknown,
+          because the build is unsigned. Click <strong>More info</strong> → <strong>Run anyway</strong>.
+        </li>
+      </ol>
+
+      <h3>Linux (x86_64)</h3>
+      <ol>
+        <li>Download the latest <code>Tomatick-x.y.z-linux-amd64.tar.xz</code> from the <a href={SITE.releases} target="_blank" rel="noopener">Releases</a> page.</li>
+        <li>
+          <pre><code>tar -xJf Tomatick-x.y.z-linux-amd64.tar.xz
+cd tomatick
+sudo make install     # or: make user-install  (installs under ~/.local)</code></pre>
+          Installs the binary, a <code>.desktop</code> entry, and the icon. No signing step.
+        </li>
+        <li>A tray host that speaks StatusNotifierItem / AppIndicator is required to see the menu bar
+          icon (GNOME needs an extension; KDE and most other desktops work out of the box).</li>
+      </ol>
+
       <p>
-        Tomatick is a <strong>menu bar app</strong> — there's no Dock icon and no window. Look for
-        the 🍅 (or stopwatch) icon in the <strong>top-right menu bar</strong>. Click it for everything.
+        Tomatick is a <strong>menu bar / system tray app</strong> — there's no taskbar window. Look for
+        the 🍅 (or stopwatch) icon in the menu bar (macOS), notification area (Windows), or system
+        tray (Linux). Click it for everything.
       </p>
 
       <h2>2. Start something</h2>
@@ -75,10 +102,12 @@ import { SITE } from '../consts';
         </tbody>
       </table>
 
-      <h2>5. Focus / Do-Not-Disturb during work</h2>
+      <h2>5. Focus / Do-Not-Disturb during work <span class="muted">(macOS only)</span></h2>
       <p>
         Tomatick can turn a macOS <strong>Focus</strong> on during a pomodoro <strong>work</strong> phase
-        and off on breaks. macOS has no public API for this, so it runs <strong>Shortcuts you create</strong>:
+        and off on breaks. macOS has no public API for this, so it runs <strong>Shortcuts you create</strong>.
+        This feature does not exist on Windows or Linux — there's no equivalent OS-level Focus/DND API
+        to hook into, so the setting is a no-op there.
       </p>
       <ol>
         <li>Open <strong>Shortcuts</strong> → <strong>+</strong> for a new shortcut.</li>
@@ -91,25 +120,29 @@ import { SITE } from '../consts';
       <h2>6. Global hotkey</h2>
       <p>
         Settings → <strong>General</strong> → <strong>Global hotkey</strong>: pick an action (Start Pomodoro,
-        Start Timer, or Toggle Keep Awake) and a key (e.g. <code>⌥⌘P</code>). The first use prompts for
-        <strong>Accessibility</strong> permission (System Settings → Privacy &amp; Security → Accessibility).
+        Start Timer, or Toggle Keep Awake) and a key (e.g. <code>⌥⌘P</code>). On macOS the first use
+        prompts for <strong>Accessibility</strong> permission (System Settings → Privacy &amp; Security →
+        Accessibility).
       </p>
 
       <h2>7. Keep Awake</h2>
       <p>Menu → <strong>Keep awake</strong> prevents sleep while it's on. Bindable to the hotkey; turns itself off on quit.</p>
 
-      <h2>8. Copy your setup to another Mac</h2>
+      <h2>8. Copy your setup to another device</h2>
       <ol>
         <li>Settings → <strong>General</strong> → <strong>Export Settings…</strong> → save the <code>.json</code>.</li>
-        <li>On the other Mac: <strong>Import Settings…</strong> → pick that file.</li>
+        <li>On the other device: <strong>Import Settings…</strong> → pick that file.</li>
       </ol>
       <p>This copies presets, pomodoro lengths, sounds, snooze, Focus shortcut names, hotkey, and alarms. (Launch-at-login stays per-machine.)</p>
 
       <h2>Where your data lives</h2>
-      <pre><code>~/Library/Application Support/Tomatick/
+      <pre><code>macOS:    ~/Library/Application Support/Tomatick/
+Windows:  %AppData%\Tomatick\
+Linux:    $XDG_DATA_HOME/Tomatick/ (or ~/.local/share/Tomatick/)
+
 ├── config.json     # all settings, presets, alarms
 └── history.db      # SQLite event history</code></pre>
-      <p>It never leaves your Mac. See the <a href="/privacy/">Privacy Policy</a> for the details.</p>
+      <p>It never leaves your device. See the <a href="/privacy/">Privacy Policy</a> for the details.</p>
 
       <p>Questions or bugs? See the <a href={SITE.repo} target="_blank" rel="noopener">GitHub repository</a>.</p>
     </div>

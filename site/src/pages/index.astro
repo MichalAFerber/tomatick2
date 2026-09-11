@@ -6,13 +6,19 @@ import { SITE } from '../consts';
 const features = [
   { icon: '⏱', title: 'Timer', body: 'Natural durations — 25m, 1h30m, 90s, 2:30. Live M:SS countdown right in the menu bar. It keeps ringing until you dismiss it.' },
   { icon: '⏲', title: 'Stopwatch', body: 'Counts up with laps. Pause, resume, reset — all from the menu.' },
-  { icon: '🍅', title: 'Pomodoro', body: '25 / 5 / 15 by default, auto-advancing work ↔ break, long break every 4th cycle. Optional Focus/DND during work.' },
+  { icon: '🍅', title: 'Pomodoro', body: '25 / 5 / 15 by default, auto-advancing work ↔ break, long break every 4th cycle. Optional Focus/DND during work (macOS only).' },
   { icon: '🔔', title: 'Alarms', body: 'One-shot (a date + time) or recurring (a time on chosen weekdays). Looping sound + notification, with snooze.' },
   { icon: '🧭', title: 'Run several at once', body: 'Multiple sessions together; the menu bar shows your pinned one live, everything else listed with its own count.' },
   { icon: '🗂', title: 'Timestamped history', body: 'Every event logged to SQLite. Browse recent runs, export the full log to CSV or JSON.' },
 ];
 
-const badges = ['Open source', 'MIT licensed', 'No data leaves your Mac', 'Single Go binary'];
+const platforms = [
+  { icon: '🍎', title: 'macOS', body: 'Apple Silicon (M1–M4). Unsigned — right-click → Open on first launch.' },
+  { icon: '🪟', title: 'Windows', body: 'x86_64. Unsigned — SmartScreen: More info → Run anyway on first launch.' },
+  { icon: '🐧', title: 'Linux', body: 'x86_64, .tar.xz. No signing step — install and run.' },
+];
+
+const badges = ['Open source', 'MIT licensed', 'macOS · Windows · Linux', 'Single Go binary'];
 ---
 <Base
   title="Tomatick — menu bar timer, stopwatch, alarm & pomodoro"
@@ -29,17 +35,32 @@ const badges = ['Open source', 'MIT licensed', 'No data leaves your Mac', 'Singl
       </h1>
       <p class="muted mx-auto mt-5 max-w-xl text-lg sm:text-xl">
         Tomatick is a <strong>menu bar</strong> timer, stopwatch, alarm and
-        pomodoro — with a timestamped history of everything you run. Rewritten
-        from the original Python app as a single Go binary.
+        pomodoro — with a timestamped history of everything you run. Runs on
+        <strong>macOS, Windows, and Linux</strong> — rewritten from the
+        original Python (macOS-only) app as a single Go binary.
       </p>
       <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
-        <a href={SITE.releases} target="_blank" rel="noopener" class="btn btn-primary text-lg">↓ Download for macOS</a>
+        <a href={SITE.releases} target="_blank" rel="noopener" class="btn btn-primary text-lg">↓ Download</a>
         <a href="/docs/" class="btn text-lg">Quick Start</a>
       </div>
       <ul class="mt-8 flex flex-wrap items-center justify-center gap-2.5" aria-label="Highlights">
         {badges.map((b) => <li class="badge">{b}</li>)}
       </ul>
-      <p class="muted mt-4 text-sm">macOS, Apple Silicon (M1–M4) · unsigned build, no Apple Developer Program needed.</p>
+      <p class="muted mt-4 text-sm">All builds are unsigned — see Quick Start for the one-time first-launch step on your OS.</p>
+    </div>
+  </section>
+
+  <!-- Platforms -->
+  <section class="container-page pb-8" aria-labelledby="platforms-h">
+    <h2 id="platforms-h" class="text-center text-2xl sm:text-3xl">Available for macOS, Windows, and Linux</h2>
+    <div class="mt-6 grid gap-5 sm:grid-cols-3">
+      {platforms.map((p) => (
+        <article class="card text-center">
+          <div class="text-3xl" aria-hidden="true">{p.icon}</div>
+          <h3 class="mt-3 text-xl">{p.title}</h3>
+          <p class="muted mt-2 text-[15px] leading-relaxed">{p.body}</p>
+        </article>
+      ))}
     </div>
   </section>
 
@@ -62,7 +83,7 @@ const badges = ['Open source', 'MIT licensed', 'No data leaves your Mac', 'Singl
     <div class="card mx-auto max-w-3xl text-center" style="background-color: var(--bg-tint);">
       <h2 class="text-2xl sm:text-3xl">Everything from the menu bar</h2>
       <p class="muted mx-auto mt-3 max-w-xl">
-        No Dock icon, no window. Start a session and it shows up in the menu — click it to
+        No taskbar window. Start a session and it shows up in the menu — click it to
         pause, stop, or dismiss. Your settings, presets and alarms sync via a simple export/import.
       </p>
       <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
