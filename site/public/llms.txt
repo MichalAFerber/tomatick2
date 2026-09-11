@@ -9,9 +9,11 @@
 ## Docs
 - [Quick Start](https://tomatick.us/docs/): install and use every feature — timer, stopwatch, pomodoro, alarms, presets, hotkey, Focus/DND, settings sync.
 
+Available for macOS (Apple Silicon), Windows (x86_64), and Linux (x86_64). All builds are unsigned.
+
 ## Source & downloads
 - [GitHub repository](https://github.com/MichalAFerber/tomatick2): source code (Go), issues, releases.
-- [Releases](https://github.com/MichalAFerber/tomatick2/releases): download the latest `.zip` (macOS, Apple Silicon).
+- [Releases](https://github.com/MichalAFerber/tomatick2/releases): download the latest `.zip` (macOS), `.exe` (Windows), or `.tar.xz` (Linux).
 
 ## Policies
 - [Privacy Policy](https://tomatick.us/privacy/): local-only data; cookieless, self-hosted Plausible analytics on the site.

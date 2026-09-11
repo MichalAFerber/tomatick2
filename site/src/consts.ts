@@ -7,8 +7,8 @@ export const SITE = {
   description:
     'A menu bar timer, stopwatch, alarm and pomodoro in one icon, with a timestamped ' +
     'history of every run. Rewritten in Go as a single binary. Open source, MIT, no tracking.',
-  // The Go rewrite (tomatick2) is the current product and where releases ship from.
-  // This repo (tomatick) still hosts the site and the original macOS-only Python app.
+  // This site and its releases both live here now (tomatick2, the Go rewrite).
+  // legacyRepo below is the original macOS-only Python app and its own site history.
   repo: 'https://github.com/MichalAFerber/tomatick2',
   releases: 'https://github.com/MichalAFerber/tomatick2/releases',
   legacyRepo: 'https://github.com/MichalAFerber/tomatick',
