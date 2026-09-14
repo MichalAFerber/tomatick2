@@ -16,9 +16,7 @@ func (u *UI) setupTray() {
 	if u.desk == nil {
 		return
 	}
-	if u.idleIcon != nil {
-		u.desk.SetSystemTrayIcon(u.idleIcon)
-	}
+	u.showIcon(u.idleIcon)
 	u.rebuildMenu()
 }
 
@@ -159,7 +157,17 @@ func (u *UI) updateTitle() {
 	if u.core.Alarming() {
 		return // shake animation owns the icon
 	}
-	if u.idleIcon != nil {
-		u.desk.SetSystemTrayIcon(u.idleIcon)
+	u.showIcon(u.idleIcon)
+}
+
+// showIcon sets the tray icon only when it changes. Each SetSystemTrayIcon call
+// makes systray build a new NSImage from the PNG bytes, which macOS decodes
+// again, and updateTitle used to re-set the idle icon on every one-second tick
+// (#15).
+func (u *UI) showIcon(r fyne.Resource) {
+	if u.desk == nil || r == nil || r == u.shownIcon {
+		return
 	}
+	u.desk.SetSystemTrayIcon(r)
+	u.shownIcon = r
 }

@@ -34,6 +34,7 @@ type UI struct {
 	iconCache   map[string]fyne.Resource
 	shakeFrames []fyne.Resource
 	idleIcon    fyne.Resource
+	shownIcon   fyne.Resource
 	animIdx     int
 	stopped     bool
 
@@ -151,7 +152,7 @@ func (u *UI) onAnim() {
 	if !u.core.Alarming() || len(u.shakeFrames) == 0 || u.desk == nil {
 		return
 	}
-	u.desk.SetSystemTrayIcon(u.shakeFrames[u.animIdx])
+	u.showIcon(u.shakeFrames[u.animIdx])
 	u.animIdx = (u.animIdx + 1) % len(u.shakeFrames)
 }
 
