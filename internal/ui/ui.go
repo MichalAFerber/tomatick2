@@ -131,7 +131,7 @@ func (u *UI) repeat(d time.Duration, fn func()) {
 				if u.stopped {
 					return
 				}
-				fn()
+				withAutoreleasePool(fn)
 				schedule()
 			})
 		})
