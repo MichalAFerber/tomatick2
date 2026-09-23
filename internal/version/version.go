@@ -1,7 +1,7 @@
 package version
 
 // Version is the single source of truth for the app version.
-const Version = "2.0.0"
+const Version = "2.0.1"
 
 const (
 	AppName  = "Tomatick"
