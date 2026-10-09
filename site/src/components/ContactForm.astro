@@ -6,6 +6,11 @@
 // It renders only when a Turnstile site key is present at build time
 // (PUBLIC_TURNSTILE_SITEKEY). Until then it shows a plain-text address and no
 // mailto: link — activation is a launch step, not a default.
+//
+// The form spaces its children with `[&>*+*]:mt-4`, a top margin on every child
+// after the first, which is what Tailwind 3's space-y utility did. Tailwind 4's
+// puts the margin under every child but the last, and the last children here
+// are <noscript> and <script>, so the hint paragraph would gain a bottom margin.
 interface Props { supportEmail: string; product: string; }
 // `product` is the herald registry slug. It selects the mailer's per-product
 // config: from address, recipient, Origin allowlist and Turnstile secret.
@@ -14,7 +19,7 @@ const sitekey = import.meta.env.PUBLIC_TURNSTILE_SITEKEY;
 ---
 
 {sitekey ? (
-  <form id="contact-form" class="mt-6 space-y-4" novalidate>
+  <form id="contact-form" class="mt-6 [&>*+*]:mt-4" novalidate>
     <div class="grid gap-4 sm:grid-cols-2">
       <label class="field">
         <span>Name</span>
