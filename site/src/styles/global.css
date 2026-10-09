@@ -1,6 +1,11 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Imported by file path on purpose: in Astro 7's server build, Vite leaves the
+   bare `tailwindcss` specifier unresolved and the build fails with ENOENT. */
+@import 'tailwindcss/index.css';
+@config '../../tailwind.config.mjs';
+
+/* Tailwind 4 applies hover: styles only on devices that can hover. Keep the
+   Tailwind 3 behavior, so the footer links still underline on tap. */
+@custom-variant hover (&:hover);
 
 /* ---------------------------------------------------------------------------
    JetBrains Mono — self-hosted (no Google Fonts, no runtime CDN). §1/§2
@@ -107,6 +112,11 @@
     background: var(--accent);
     color: var(--accent-fg);
   }
+  /* Tailwind 4's Preflight dropped the pointer cursor on buttons. */
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
+    cursor: pointer;
+  }
 }
 
 @layer components {
@@ -120,9 +130,12 @@
   .muted {
     color: var(--fg-muted);
   }
+  /* The transition list is Tailwind 3's transition-colors. Tailwind 4's also
+     animates outline-color, which fades the focus ring in from the text color. */
   .btn {
     @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl px-5 py-3
-           text-base font-semibold transition-colors;
+           text-base font-semibold
+           transition-[color,background-color,border-color,text-decoration-color,fill,stroke];
     border: 1px solid var(--border);
     background-color: var(--bg-elev);
     color: var(--fg);
@@ -175,7 +188,10 @@
     border: 1px solid var(--border);
     color: var(--fg);
   }
-  .link-accent {
+  /* `.doc a` is listed here because Tailwind 4's @apply takes utilities only,
+     so the doc typography below cannot @apply this class. */
+  .link-accent,
+  .doc a {
     color: var(--accent-strong);
     @apply font-semibold underline decoration-2 underline-offset-2;
   }
@@ -187,7 +203,6 @@
   .doc p { @apply my-4; }
   .doc ul { @apply my-4 list-disc space-y-1.5 pl-6; }
   .doc ol { @apply my-4 list-decimal space-y-1.5 pl-6; }
-  .doc a { @apply link-accent; }
   .doc code {
     @apply rounded px-1.5 py-0.5 text-[0.9em];
     background-color: var(--bg-tint);

@@ -13,8 +13,8 @@
     "gen:assets": "node scripts/gen-assets.mjs"
   },
   "dependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
     "astro": "^7.3.5",
-    "autoprefixer": "^10.6.1",
     "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
