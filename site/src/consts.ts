@@ -5,8 +5,8 @@ export const SITE = {
   url: 'https://tomatick.us',
   tagline: 'A menu bar timer, stopwatch, alarm & pomodoro — now a single Go binary.',
   description:
-    'A menu bar timer, stopwatch, alarm and pomodoro in one icon, with a timestamped ' +
-    'history of every run. Rewritten in Go as a single binary. Open source, MIT, no tracking.',
+    'A menu bar timer, stopwatch, alarm, and pomodoro in one icon, with a timestamped ' +
+    'history of every run. A single Go binary. Open source, MIT, no tracking.',
   // This site and its releases both live here now (tomatick2, the Go rewrite).
   // legacyRepo below is the original macOS-only Python app and its own site history.
   repo: 'https://github.com/MichalAFerber/tomatick2',
