@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.3.3",
-    "astro": "^7.4.0",
+    "astro": "^7.4.2",
     "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
