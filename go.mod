@@ -7,7 +7,7 @@ require (
 	fyne.io/systray v1.12.3-0.20260810170012-af4e8e793ec4
 	golang.design/x/hotkey v0.6.4
 	golang.org/x/sys v0.49.0
-	modernc.org/sqlite v1.61.0
+	modernc.org/sqlite v1.61.1
 )
 
 require (
